@@ -27,4 +27,22 @@
             <version>2.15.2</version>
         </dependency>
     </dependencies>
+    <build>
+    <plugins>
+        <!-- Plugin para empaquetar un JAR ejecutable -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>3.2.2</version>
+            <configuration>
+                <archive>
+                    <manifest>
+                        <addClasspath>true</addClasspath>
+                        <mainClass>com.example.TestDataMart</mainClass> <!-- Clase principal -->
+                    </manifest>
+                </archive>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
 </project>
