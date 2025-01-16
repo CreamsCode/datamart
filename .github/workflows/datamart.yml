@@ -60,14 +60,14 @@ jobs:
       - name: Get and Process Terraform Outputs
         id: save-outputs
         run: |
+          # Generar delimitador único para salida multilinea
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+
+          # Extraer salidas de Terraform
           hazelcast_ip=$(terraform output -raw hazelcast_public_ip 2>/dev/null || echo "ERROR")
           datamart_ip=$(terraform output -raw datamart_instance_public_ip 2>/dev/null || echo "ERROR")
 
-          # Limpiar cualquier carácter no deseado
-          hazelcast_ip=$(echo "$hazelcast_ip" | awk -F'::' '{print $1}' | tr -d '\r')
-          datamart_ip=$(echo "$datamart_ip" | awk -F'::' '{print $1}' | tr -d '\r')
-
-          # Validar que las IPs no estén vacías ni sean "ERROR"
+          # Validar salidas
           if [ "$hazelcast_ip" = "ERROR" ] || [ -z "$hazelcast_ip" ]; then
             echo "Failed to extract Hazelcast IP."
             exit 1
@@ -77,9 +77,19 @@ jobs:
             exit 1
           fi
 
-          # Escribir en GITHUB_OUTPUT con formato válido
-          echo "hazelcast_ip=$hazelcast_ip" >> $GITHUB_OUTPUT
-          echo "datamart_ip=$datamart_ip" >> $GITHUB_OUTPUT
+          # Limpiar posibles caracteres no deseados
+          hazelcast_ip=$(echo "$hazelcast_ip" | tr -d '\r')
+          datamart_ip=$(echo "$datamart_ip" | tr -d '\r')
+
+          # Exportar IPs a GITHUB_OUTPUT
+          echo "hazelcast_ip<<$EOF" >> $GITHUB_OUTPUT
+          echo "$hazelcast_ip" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+
+          echo "datamart_ip<<$EOF" >> $GITHUB_OUTPUT
+          echo "$datamart_ip" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+
 
 
   setup-datamart:
