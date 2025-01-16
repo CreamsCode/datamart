@@ -28,7 +28,7 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
       with:
-        terraform_version: 1.4.6
+        terraform_version: 1.10.4
 
     # 4. Initialize Terraform
     - name: Terraform Init
@@ -42,8 +42,8 @@ jobs:
     # 6. Extract the IP of Hazelcast instance
     - name: Get Hazelcast IP
       run: |
-        HAZELCAST_IP=$(terraform output -raw hazelcast_public_ip | tr -d '\r')
-        echo "HAZELCAST_IP=${HAZELCAST_IP}" >> $GITHUB_ENV
+        HAZELCAST_IP=$(terraform output -raw hazelcast_public_ip 2>/dev/null || echo "ERROR")
+        echo "HAZELCAST_IP=$HAZELCAST_IP" >> $GITHUB_ENV
 
 
     # 7. Install Java and Maven
