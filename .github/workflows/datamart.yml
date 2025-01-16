@@ -60,9 +60,8 @@ jobs:
           exit 1
         fi
         
-        # Escribir en GITHUB_OUTPUT
-        echo "hazelcast_ip=$HAZELCAST_IP" >> $GITHUB_OUTPUT
-
+        # Escribir en GITHUB_OUTPUT con un formato válido
+        echo "hazelcast_ip=$HAZELCAST_IP" >> $GITHUB_ENV
 
     # 7. Verify Hazelcast IP Output
     - name: Debug Hazelcast IP
