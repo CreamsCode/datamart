@@ -69,7 +69,7 @@ resource "aws_security_group" "hazelcast_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -175,4 +175,18 @@ resource "aws_instance" "datamart_instance" {
   tags = {
     Name = "DatamartInstance"
   }
+}
+
+resource "aws_ssm_parameter" "datamart_ip" {
+  name  = "datamart_ip"
+  type  = "String"
+  overwrite = true
+  value = aws_instance.datamart_instance.public_ip
+}
+
+resource "aws_ssm_parameter" "hazelcast_ip" {
+  name  = "hazelcast_ip"
+  type  = "String"
+  overwrite = true
+  value = aws_instance.hazelcast_instance.public_ip
 }
