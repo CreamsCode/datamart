@@ -1,9 +1,9 @@
-variable "ami_id" {
-  description = "AMI ID para la instancia de AWS"
-  default     = "ami-0c02fb55956c7d316" # Cambia esto según sea necesario
+output "hazelcast_public_ip" {
+  value = aws_instance.hazelcast_instance.public_ip
+  description = "Public IP of the Hazelcast server instance"
 }
 
-variable "instance_type" {
-  description = "Tipo de instancia de AWS (por ejemplo, t2.micro)"
-  default     = "t2.micro"
+output "datamart_public_ip" {
+  value = aws_instance.datamart_instance.public_ip
+  description = "Public IP of the Datamart instance"
 }

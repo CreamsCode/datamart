@@ -47,6 +47,29 @@ resource "aws_route_table_association" "datamart_subnet_association" {
   route_table_id = aws_route_table.datamart_route_table.id
 }
 
+# Grupo de Seguridad para Hazelcast
+resource "aws_security_group" "hazelcast_sg" {
+  vpc_id = aws_vpc.datamart_vpc.id
+  tags = {
+    Name = "HazelcastSecurityGroup"
+  }
+
+  ingress {
+    description = "Hazelcast Port"
+    from_port   = 5701
+    to_port     = 5701
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 # Grupo de Seguridad para el Datamart
 resource "aws_security_group" "datamart_sg" {
   vpc_id = aws_vpc.datamart_vpc.id
@@ -78,6 +101,32 @@ resource "aws_security_group" "datamart_sg" {
   }
 }
 
+# Instancia EC2 para Hazelcast
+resource "aws_instance" "hazelcast_instance" {
+  ami           = "ami-05576a079321f21f8" # Cambia esto si es necesario
+  instance_type = "t2.micro"
+  key_name      = "vockey" # Cambia esto por el nombre correcto de tu par de claves
+  subnet_id     = aws_subnet.datamart_subnet.id
+  vpc_security_group_ids = [aws_security_group.hazelcast_sg.id]
+
+  user_data = <<-EOF
+    #!/bin/bash
+    sudo yum update -y
+    sudo yum install -y java-17-amazon-corretto wget
+
+    # Descargar y configurar Hazelcast
+    wget https://repo1.maven.org/maven2/com/hazelcast/hazelcast-distribution/5.3.8/hazelcast-distribution-5.3.8.tar.gz
+    tar -xvzf hazelcast-distribution-5.3.8.tar.gz
+    sudo mv hazelcast-5.3.8 /opt/hazelcast
+    nohup java -cp /opt/hazelcast/lib/* com.hazelcast.core.server.HazelcastMember &
+    echo "Hazelcast server ready."
+  EOF
+
+  tags = {
+    Name = "HazelcastInstance"
+  }
+}
+
 # Instancia EC2 para el Datamart
 resource "aws_instance" "datamart_instance" {
   ami           = "ami-05576a079321f21f8" # Cambia esto si es necesario
@@ -106,7 +155,7 @@ resource "aws_instance" "datamart_instance" {
     cd /home/ec2-user/datamart
 
     # Crear archivo de configuración con la IP del cliente Hazelcast (puede cambiar dinámicamente)
-    echo "hazelcast.ip=REPLACE_WITH_HAZELCAST_IP" > config.properties
+    echo "hazelcast.ip=${aws_instance.hazelcast_instance.public_ip}" > config.properties
 
     # Compilar y ejecutar el Datamart
     /opt/maven/bin/mvn clean package
@@ -119,5 +168,3 @@ resource "aws_instance" "datamart_instance" {
     Name = "DatamartInstance"
   }
 }
-
-
