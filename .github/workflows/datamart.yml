@@ -40,28 +40,29 @@ jobs:
       run: terraform apply -auto-approve
 
     # 6. Extract the IP of Hazelcast instance
-    - name: Debug Hazelcast IP Output
+    - name: Get and Process Hazelcast IP
       run: |
         # Extraer la IP cruda
-        HAZELCAST_IP=$(terraform output -raw hazelcast_public_ip 2>/dev/null || echo "ERROR")
+        RAW_OUTPUT=$(terraform output -raw hazelcast_public_ip 2>/dev/null || echo "ERROR")
         
         # Imprimir la salida cruda para depuración
-        echo "Raw Hazelcast IP: $HAZELCAST_IP"
-
-        # Limpiar posibles caracteres no deseados
-        HAZELCAST_IP=$(echo "$HAZELCAST_IP" | tr -d '\r')
-
-        # Imprimir la salida limpia
-        echo "Cleaned Hazelcast IP: $HAZELCAST_IP"
-
+        echo "Raw Hazelcast Output: $RAW_OUTPUT"
+        
+        # Procesar la salida para obtener solo la IP antes del primer ":"
+        HAZELCAST_IP=$(echo "$RAW_OUTPUT" | awk -F':' '{print $1}' | tr -d '\r')
+        
+        # Imprimir la IP limpia
+        echo "Processed Hazelcast IP: $HAZELCAST_IP"
+        
         # Validar que no haya errores
-        if [ "$HAZELCAST_IP" = "ERROR" ]; then
-          echo "Failed to extract Hazelcast IP from Terraform output"
+        if [ "$HAZELCAST_IP" = "ERROR" ] || [ -z "$HAZELCAST_IP" ]; then
+          echo "Failed to extract a valid Hazelcast IP from Terraform output"
           exit 1
         fi
-
+        
         # Escribir en GITHUB_OUTPUT
         echo "hazelcast_ip=$HAZELCAST_IP" >> $GITHUB_OUTPUT
+
 
     # 7. Verify Hazelcast IP Output
     - name: Debug Hazelcast IP
