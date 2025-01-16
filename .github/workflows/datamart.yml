@@ -43,8 +43,21 @@ jobs:
     - name: Extract Hazelcast IP
       id: get-hazelcast-ip
       run: |
+        # Extraer la IP cruda
         HAZELCAST_IP=$(terraform output -raw hazelcast_public_ip 2>/dev/null || echo "ERROR")
-        echo "HAZELCAST_IP=$HAZELCAST_IP" >> $GITHUB_OUTPUT
+        
+        # Limpiar posibles caracteres no deseados
+        HAZELCAST_IP=$(echo "$HAZELCAST_IP" | tr -d '\r')
+        
+        # Validar que no haya errores
+        if [ "$HAZELCAST_IP" = "ERROR" ]; then
+          echo "Failed to extract Hazelcast IP from Terraform output"
+          exit 1
+        fi
+        
+        # Escribir en GITHUB_OUTPUT
+        echo "hazelcast_ip=$HAZELCAST_IP" >> $GITHUB_OUTPUT
+
 
     # 7. Verify Hazelcast IP Output
     - name: Debug Hazelcast IP
