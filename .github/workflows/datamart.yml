@@ -108,26 +108,31 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Install Java and Maven
+      - name: Install Java
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Install Maven 
+        run: |
+          wget https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
+          tar -xvzf apache-maven-3.9.9-bin.tar.gz
+          sudo mv apache-maven-3.9.9 /opt/maven
+          echo "export M2_HOME=/opt/maven" >> $GITHUB_ENV
+          echo "export PATH=/opt/maven/bin:\$PATH" >> $GITHUB_ENV
+          source $GITHUB_ENV
+          mvn -version
+
       - name: Build Datamart
         run: |
-          cd java-demo
           mvn clean package
-
-      - name: Create Hazelcast Config File
-        run: |
-          echo "hazelcast.ip=${{ needs.deploy-infrastructure.outputs.hazelcast_ip }}" > java-demo/hazelcast_config.properties
-          cat java-demo/hazelcast_config.properties
 
       - name: Run Datamart
         run: |
-          cd java-demo
           java -jar target/datamart-1.0-SNAPSHOT.jar
+        env:
+          HAZELCAST_IP: ${{ needs.deploy-infrastructure.outputs.hazelcast_ip }}
 
   cleanup:
     name: Cleanup Resources
