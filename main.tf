@@ -2,57 +2,70 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# Grupo de seguridad para Hazelcast
-resource "aws_security_group" "hazelcast_sg" {
-  name        = "hazelcast-sg"
-  description = "Allow Hazelcast traffic"
+# VPC
+resource "aws_vpc" "datamart_vpc" {
+  cidr_block = "10.0.0.0/16"
+  tags = {
+    Name = "DatamartVPC"
+  }
+}
+
+# Subnet Pública
+resource "aws_subnet" "datamart_subnet" {
+  vpc_id                  = aws_vpc.datamart_vpc.id
+  cidr_block              = "10.0.1.0/24"
+  map_public_ip_on_launch = true
+  availability_zone       = "us-east-1a"
+  tags = {
+    Name = "DatamartSubnet"
+  }
+}
+
+# Internet Gateway
+resource "aws_internet_gateway" "datamart_igw" {
+  vpc_id = aws_vpc.datamart_vpc.id
+  tags = {
+    Name = "DatamartInternetGateway"
+  }
+}
+
+# Route Table para la Subnet Pública
+resource "aws_route_table" "datamart_route_table" {
+  vpc_id = aws_vpc.datamart_vpc.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.datamart_igw.id
+  }
+  tags = {
+    Name = "DatamartRouteTable"
+  }
+}
+
+# Asociar la Route Table a la Subnet Pública
+resource "aws_route_table_association" "datamart_subnet_association" {
+  subnet_id      = aws_subnet.datamart_subnet.id
+  route_table_id = aws_route_table.datamart_route_table.id
+}
+
+# Grupo de Seguridad para el Datamart
+resource "aws_security_group" "datamart_sg" {
+  vpc_id = aws_vpc.datamart_vpc.id
+  tags = {
+    Name = "DatamartSecurityGroup"
+  }
 
   ingress {
-    from_port   = 5701
-    to_port     = 5701
+    description = "SSH Access"
+    from_port   = 22
+    to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-# Instancia EC2 para Hazelcast
-resource "aws_instance" "hazelcast_instance" {
-  ami           = var.ami_id
-  instance_type = var.instance_type
-  key_name      = "vockey"
-  security_groups = [aws_security_group.hazelcast_sg.name]
-
-  user_data = <<-EOF
-    #!/bin/bash
-    sudo yum update -y
-    sudo yum install -y java-17-amazon-corretto wget
-    wget https://repo1.maven.org/maven2/com/hazelcast/hazelcast-distribution/5.3.8/hazelcast-distribution-5.3.8.tar.gz
-    tar -xvzf hazelcast-distribution-5.3.8.tar.gz
-    sudo mv hazelcast-5.3.8 /opt/hazelcast
-    nohup java -cp /opt/hazelcast/lib/* com.hazelcast.core.server.HazelcastMember &
-    echo "Hazelcast instance ready."
-  EOF
-
-  tags = {
-    Name = "HazelcastInstance"
-  }
-}
-
-# Grupo de seguridad para el Datamart
-resource "aws_security_group" "datamart_sg" {
-  name        = "datamart-sg"
-  description = "Allow SSH access to the Datamart instance"
-
   ingress {
-    from_port   = 22
-    to_port     = 22
+    description = "Application Port Access"
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -67,10 +80,11 @@ resource "aws_security_group" "datamart_sg" {
 
 # Instancia EC2 para el Datamart
 resource "aws_instance" "datamart_instance" {
-  ami           = var.ami_id
-  instance_type = var.instance_type
-  key_name      = "vockey"
-  security_groups = [aws_security_group.datamart_sg.name]
+  ami           = "ami-05576a079321f21f8" # Cambia esto si es necesario
+  instance_type = "t2.micro"
+  key_name      = "vockey" # Cambia esto por el nombre correcto de tu par de claves
+  subnet_id     = aws_subnet.datamart_subnet.id
+  vpc_security_group_ids = [aws_security_group.datamart_sg.id]
 
   user_data = <<-EOF
     #!/bin/bash
@@ -85,19 +99,18 @@ resource "aws_instance" "datamart_instance" {
     # Configurar variables de entorno para Maven
     echo "export M2_HOME=/opt/maven" | sudo tee /etc/profile.d/maven.sh
     echo "export PATH=\$M2_HOME/bin:\$PATH" | sudo tee -a /etc/profile.d/maven.sh
-
-    # Aplicar las variables de entorno
     source /etc/profile.d/maven.sh
 
     # Clonar el repositorio del Datamart
-    git clone https://github.com/CreamsCode/datamart
-    cd datamart
+    git clone https://github.com/CreamsCode/datamart /home/ec2-user/datamart
+    cd /home/ec2-user/datamart
 
-    # Crear archivo de configuración con la IP de Hazelcast (reemplazada dinámicamente)
+    # Crear archivo de configuración con la IP del cliente Hazelcast (puede cambiar dinámicamente)
     echo "hazelcast.ip=REPLACE_WITH_HAZELCAST_IP" > config.properties
 
-    # Compilar el Datamart
+    # Compilar y ejecutar el Datamart
     /opt/maven/bin/mvn clean package
+    java -jar target/datamart-1.0-SNAPSHOT.jar
 
     echo "Datamart instance ready."
   EOF
@@ -106,4 +119,5 @@ resource "aws_instance" "datamart_instance" {
     Name = "DatamartInstance"
   }
 }
+
 
