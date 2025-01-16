@@ -1,0 +1,55 @@
+name: Deploy Datamart and Hazelcast
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-hazelcast:
+    name: Deploy Hazelcast and Datamart
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Checkout the repository
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    # 2. Set up Terraform
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.4.6
+
+    # 3. Initialize Terraform
+    - name: Terraform Init
+      run: terraform init
+
+    # 4. Apply Terraform to deploy Hazelcast and Datamart instances
+    - name: Terraform Apply
+      id: terraform
+      run: terraform apply -auto-approve
+
+    # 5. Extract the IP of Hazelcast instance
+    - name: Get Hazelcast IP
+      run: |
+        HAZELCAST_IP=$(terraform output -raw hazelcast_public_ip)
+        echo "HAZELCAST_IP=${HAZELCAST_IP}" >> $GITHUB_ENV
+
+    # 6. Install Java and Maven
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    # 7. Build Datamart Jar
+    - name: Build Datamart
+      run: |
+        cd java-demo
+        mvn clean package
+
+    # 8. Run Datamart with Hazelcast IP
+    - name: Run Datamart
+      run: |
+        java -jar target/datamart-1.0-SNAPSHOT.jar
