@@ -41,9 +41,8 @@ jobs:
 
     # 6. Extract the IP of Hazelcast instance
     - name: Get Hazelcast IP
-      run: |
-        HAZELCAST_IP=$(terraform output -raw hazelcast_public_ip)
-        echo "HAZELCAST_IP=${HAZELCAST_IP}" >> $GITHUB_ENV
+      id: get_hazelcast_ip
+      run: echo "HAZELCAST_IP=$(terraform output -raw hazelcast_public_ip)" >> $GITHUB_ENV
 
     # 7. Install Java and Maven
     - name: Setup Java
@@ -62,3 +61,8 @@ jobs:
     - name: Run Datamart
       run: |
         java -jar target/datamart-1.0-SNAPSHOT.jar
+
+    # 10. Destroy Terraform Resources
+    - name: Terraform Destroy
+      if: always()
+      run: terraform destroy -auto-approve
