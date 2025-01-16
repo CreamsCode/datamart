@@ -123,10 +123,12 @@ resource "aws_instance" "hazelcast_instance" {
     sudo yum install -y java-17-amazon-corretto wget
 
     # Descargar y configurar Hazelcast
-    wget https://repo1.maven.org/maven2/com/hazelcast/hazelcast-distribution/5.3.8/hazelcast-distribution-5.3.8.tar.gz
-    tar -xvzf hazelcast-distribution-5.3.8.tar.gz
-    sudo mv hazelcast-5.3.8 /opt/hazelcast
-    nohup java -cp /opt/hazelcast/lib/* com.hazelcast.core.server.HazelcastMember &
+    wget https://repository.hazelcast.com/rpm/stable/hazelcast-rpm-stable.repo -O hazelcast-rpm-stable.repo
+    sudo mv hazelcast-rpm-stable.repo /etc/yum.repos.d/
+    sudo yum install hazelcast-5.5.0
+
+    hz start
+
     echo "Hazelcast server ready."
   EOF
 
