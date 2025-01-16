@@ -41,8 +41,10 @@ jobs:
 
     # 6. Extract the IP of Hazelcast instance
     - name: Get Hazelcast IP
-      id: get_hazelcast_ip
-      run: echo "HAZELCAST_IP=$(terraform output -raw hazelcast_public_ip)" >> $GITHUB_ENV
+      run: |
+        HAZELCAST_IP=$(terraform output -raw hazelcast_public_ip | tr -d '\r')
+        echo "HAZELCAST_IP=${HAZELCAST_IP}" >> $GITHUB_ENV
+
 
     # 7. Install Java and Maven
     - name: Setup Java
