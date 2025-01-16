@@ -2,22 +2,23 @@ package com.example.datamart;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 
 public class HazelcastConnection {
     private HazelcastInstance hazelcastClient;
 
-    public HazelcastConnection() {
+    public HazelcastConnection(String hazelcastIp) {
+        if (hazelcastIp == null || hazelcastIp.isEmpty()) {
+            throw new IllegalArgumentException("Hazelcast IP address must not be null or empty");
+        }
+
         ClientConfig clientConfig = new ClientConfig();
-        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-
-        networkConfig.addAddress("127.0.0.1:5701");
-
-        networkConfig.setConnectionTimeout(10000); 
+        clientConfig.getNetworkConfig()
+                    .addAddress(hazelcastIp + ":5701");
 
         this.hazelcastClient = HazelcastClient.newHazelcastClient(clientConfig);
+        System.out.println("Connected to Hazelcast at " + hazelcastIp + ":5701");
     }
 
     public HazelcastInstance getHazelcastClient() {
@@ -35,6 +36,7 @@ public class HazelcastConnection {
     public void close() {
         if (hazelcastClient != null) {
             hazelcastClient.shutdown();
+            System.out.println("Hazelcast client connection closed.");
         }
     }
 }
