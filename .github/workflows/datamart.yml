@@ -76,7 +76,6 @@ jobs:
             echo "Failed to extract Datamart IP."
             exit 1
           fi
-
           # Limpiar posibles caracteres no deseados
           hazelcast_ip=$(echo "$hazelcast_ip" | tr -d '\r')
           datamart_ip=$(echo "$datamart_ip" | tr -d '\r')
