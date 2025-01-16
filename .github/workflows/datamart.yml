@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - master
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
-  deploy-hazelcast:
+  deploy-hazelcast-and-datamart:
     name: Deploy Hazelcast and Datamart
     runs-on: ubuntu-latest
 
@@ -40,36 +40,36 @@ jobs:
       run: terraform apply -auto-approve
 
     # 6. Extract the IP of Hazelcast instance
-    - name: Get Hazelcast IP
-      run: |
-        HAZELCAST_IP=$(terraform output -raw hazelcast_public_ip 2>/dev/null | tr -d '\r' || echo "ERROR")
-        echo "HAZELCAST_IP=${HAZELCAST_IP}" >> $GITHUB_ENV
-
-    - name: Debug Hazelcast IP
+    - name: Extract Hazelcast IP
+      id: get-hazelcast-ip
       run: |
         HAZELCAST_IP=$(terraform output -raw hazelcast_public_ip 2>/dev/null || echo "ERROR")
-        echo "HAZELCAST_IP=${HAZELCAST_IP}"
+        echo "HAZELCAST_IP=$HAZELCAST_IP" >> $GITHUB_OUTPUT
 
+    # 7. Verify Hazelcast IP Output
+    - name: Debug Hazelcast IP
+      run: echo "Hazelcast IP is ${{ steps.get-hazelcast-ip.outputs.HAZELCAST_IP }}"
 
-    # 7. Install Java and Maven
+    # 8. Install Java and Maven
     - name: Setup Java
       uses: actions/setup-java@v3
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    # 8. Build Datamart Jar
+    # 9. Build Datamart Jar
     - name: Build Datamart
       run: |
         cd java-demo
         mvn clean package
 
-    # 9. Run Datamart with Hazelcast IP
+    # 10. Run Datamart with Hazelcast IP
     - name: Run Datamart
       run: |
-        java -jar target/datamart-1.0-SNAPSHOT.jar
+        echo "Running Datamart with Hazelcast IP: ${{ steps.get-hazelcast-ip.outputs.HAZELCAST_IP }}"
+        java -jar target/datamart-1.0-SNAPSHOT.jar --hazelcast.ip=${{ steps.get-hazelcast-ip.outputs.HAZELCAST_IP }}
 
-    # 10. Destroy Terraform Resources
+    # 11. Destroy Terraform Resources
     - name: Terraform Destroy
       if: always()
       run: terraform destroy -auto-approve
