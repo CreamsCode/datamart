@@ -111,7 +111,7 @@ jobs:
         run: |
           java -jar target/datamart-1.0-SNAPSHOT.jar
         env:
-          HAZELCAST_IP: $(aws ssm get-parameter --name "hazelcast_ip" --query "Parameter.Value" --output text --region us-east-1)
+          HAZELCAST_IP: ${{ env.hazelcast_ip }}
 
   cleanup:
     name: Cleanup Resources
