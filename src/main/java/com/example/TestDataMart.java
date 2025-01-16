@@ -8,7 +8,6 @@ public class TestDataMart {
     public static void main(String[] args) {
         String mongoUri = "mongodb://root:example@localhost:27017";
         String dbName = "graph_words_db";
-
         String hazelcastIp = System.getenv("HAZELCAST_IP");
 
         if (hazelcastIp == null || hazelcastIp.isEmpty()) {
