@@ -108,6 +108,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      - name: Debug HAZELCAST_IP
+          run: |
+            echo "HAZELCAST_IP is: ${{ needs.deploy-infrastructure.outputs.hazelcast_ip }}
+
       - name: Install Java
         uses: actions/setup-java@v3
         with:
