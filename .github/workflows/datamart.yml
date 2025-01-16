@@ -92,7 +92,7 @@ jobs:
 
 
 
-    setup-datamart:
+  setup-datamart:
     name: Setup and Run Datamart
     runs-on: ubuntu-latest
     needs: deploy-infrastructure
@@ -107,11 +107,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-
-      - name: Debug HAZELCAST_IP
-        run: |
-          echo "HAZELCAST_IP is: ${{ needs.deploy-infrastructure.outputs.hazelcast_ip }}"
-
+      
       - name: Install Java
         uses: actions/setup-java@v3
         with:
