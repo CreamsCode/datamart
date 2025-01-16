@@ -78,8 +78,8 @@ jobs:
           fi
 
           # Limpiar posibles caracteres no deseados
-          hazelcast_ip=$(echo "$hazelcast_ip" | tr -d '\r')
-          datamart_ip=$(echo "$datamart_ip" | tr -d '\r')
+          hazelcast_ip=$(echo "$hazelcast_ip" | awk -F'::' '{print $1}' | tr -d '\r')
+          datamart_ip=$(echo "$datamart_ip" | awk -F'::' '{print $1}' | tr -d '\r')
 
           # Exportar IPs a GITHUB_OUTPUT
           echo "hazelcast_ip<<$EOF" >> $GITHUB_OUTPUT
