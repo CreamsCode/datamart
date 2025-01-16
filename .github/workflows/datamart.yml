@@ -57,13 +57,30 @@ jobs:
       - name: Debug Terraform Output
         run: terraform output
 
-      - name: Save Terraform Outputs
+      - name: Get and Process Terraform Outputs
         id: save-outputs
         run: |
           hazelcast_ip=$(terraform output -raw hazelcast_public_ip 2>/dev/null || echo "ERROR")
           datamart_ip=$(terraform output -raw datamart_instance_public_ip 2>/dev/null || echo "ERROR")
+
+          # Limpiar cualquier carácter no deseado
+          hazelcast_ip=$(echo "$hazelcast_ip" | awk -F'::' '{print $1}' | tr -d '\r')
+          datamart_ip=$(echo "$datamart_ip" | awk -F'::' '{print $1}' | tr -d '\r')
+
+          # Validar que las IPs no estén vacías ni sean "ERROR"
+          if [ "$hazelcast_ip" = "ERROR" ] || [ -z "$hazelcast_ip" ]; then
+            echo "Failed to extract Hazelcast IP."
+            exit 1
+          fi
+          if [ "$datamart_ip" = "ERROR" ] || [ -z "$datamart_ip" ]; then
+            echo "Failed to extract Datamart IP."
+            exit 1
+          fi
+
+          # Escribir en GITHUB_OUTPUT con formato válido
           echo "hazelcast_ip=$hazelcast_ip" >> $GITHUB_OUTPUT
           echo "datamart_ip=$datamart_ip" >> $GITHUB_OUTPUT
+
 
   setup-datamart:
     name: Setup and Run Datamart
