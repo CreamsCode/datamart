@@ -2,18 +2,6 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# Variables
-variable "ami_id" {
-  description = "AMI ID for the instances"
-  type        = string
-}
-
-variable "instance_type" {
-  description = "Instance type for the EC2 instances"
-  type        = string
-  default     = "t2.micro"
-}
-
 # Grupo de seguridad para Hazelcast
 resource "aws_security_group" "hazelcast_sg" {
   name        = "hazelcast-sg"
