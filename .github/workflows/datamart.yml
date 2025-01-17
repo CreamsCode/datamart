@@ -70,24 +70,34 @@ jobs:
           echo "datamart_ip=$datamart_ip" >> $GITHUB_ENV
 
   setup-hazelcast:
-      name: Setup Hazelcast
-      runs-on: ubuntu-latest
-      needs: deploy-infrastructure
+    name: Setup Hazelcast
+    runs-on: ubuntu-latest
+    needs: deploy-infrastructure
 
-      steps:
-        - name: Fetch Hazelcast IP
-          run: |
-            HAZELCAST_IP=$(aws ssm get-parameter --name "hazelcast_ip" --query "Parameter.Value" --output text --region us-east-1)
-            echo "HAZELCAST_IP=$HAZELCAST_IP" >> $GITHUB_ENV
+    steps:
+      - name: Checkout Repository
+          uses: actions/checkout@v3
 
-        - name: Verify Hazelcast is Running
-          run: |
-            nc -zv ${{ env.HAZELCAST_IP }} 5701 || { echo "Hazelcast server is not reachable on port 5701"; exit 1; }
-            
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Fetch Hazelcast IP
+        run: |
+          HAZELCAST_IP=$(aws ssm get-parameter --name "hazelcast_ip" --query "Parameter.Value" --output text --region us-east-1)
+          echo "HAZELCAST_IP=$HAZELCAST_IP" >> $GITHUB_ENV
+
+      - name: Verify Hazelcast is Running
+        run: |
+          nc -zv ${{ env.HAZELCAST_IP }} 5701 || { echo "Hazelcast server is not reachable on port 5701"; exit 1; }
+
   setup-datamart:
     name: Setup and Run Datamart
     runs-on: ubuntu-latest
-    needs: deploy-infrastructure
+    needs: setup-hazelcast
 
     steps:
       - name: Checkout Repository
@@ -120,21 +130,11 @@ jobs:
         run: |
           mvn clean package
 
-      - name: Fetch Hazelcast IP
-        run: |
-          HAZELCAST_IP=$(aws ssm get-parameter --name "hazelcast_ip" --query "Parameter.Value" --output text --region us-east-1)
-          echo "HAZELCAST_IP=$HAZELCAST_IP" >> $GITHUB_ENV
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: us-east-1
-
       - name: Run Datamart
         run: |
           java -jar target/datamart-1.0-SNAPSHOT.jar
         env:
           HAZELCAST_IP: ${{ env.HAZELCAST_IP }}
-
 
   cleanup:
     name: Cleanup Resources
