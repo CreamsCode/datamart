@@ -43,7 +43,7 @@
                 <archive>
                     <manifest>
                         <addClasspath>true</addClasspath>
-                        <mainClass>test.TestDataMart</mainClass> <!-- Clase principal -->
+                        <mainClass>Main</mainClass> <!-- Clase principal -->
                     </manifest>
                 </archive>
             </configuration>

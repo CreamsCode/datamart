@@ -1,11 +1,8 @@
-package test;
-
-
 import datamart.DataMart;
 import datamart.HazelcastConnection;
 import datamart.MongoDBConnection;
 
-public class TestDataMart {
+public class Main {
     public static void main(String[] args) {
         String mongoIp = System.getenv("MONGO_IP");
         String mongoUri = "mongodb://" + mongoIp + ":27017/";

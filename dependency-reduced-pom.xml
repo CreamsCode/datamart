@@ -15,7 +15,7 @@
           <archive>
             <manifest>
               <addClasspath>true</addClasspath>
-              <mainClass>test.TestDataMart</mainClass>
+              <mainClass>Main</mainClass>
             </manifest>
           </archive>
         </configuration>
