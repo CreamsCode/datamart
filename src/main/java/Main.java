@@ -28,12 +28,18 @@ public class Main {
 
             DataMart dataMart = new DataMart(mongoConnection, hazelcastConnection);
 
-            long startTime = System.currentTimeMillis();
-            dataMart.buildDataMart();
-            long endTime = System.currentTimeMillis();
+            System.out.println("Starting DataMart processing...");
 
-            long duration = endTime - startTime;
-            System.out.println("Time taken to build DataMart: " + (duration / 1000.0) + " seconds");
+            while (true) { 
+                long startTime = System.currentTimeMillis();
+                dataMart.buildDataMart(); 
+                long endTime = System.currentTimeMillis();
+
+                long duration = endTime - startTime;
+                System.out.println("Time taken to build DataMart: " + (duration / 1000.0) + " seconds");
+
+                Thread.sleep(10000); 
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
