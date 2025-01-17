@@ -1,4 +1,4 @@
-package com.example.datamart;
+package datamart;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;

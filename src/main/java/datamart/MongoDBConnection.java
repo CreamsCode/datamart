@@ -1,4 +1,4 @@
-package com.example.datamart;
+package datamart;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;

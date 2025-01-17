@@ -1,8 +1,8 @@
-package com.example;
 
-import com.example.datamart.DataMart;
-import com.example.datamart.HazelcastConnection;
-import com.example.datamart.MongoDBConnection;
+
+import datamart.DataMart;
+import datamart.HazelcastConnection;
+import datamart.MongoDBConnection;
 
 public class TestDataMart {
     public static void main(String[] args) {
@@ -18,7 +18,7 @@ public class TestDataMart {
 
         HazelcastConnection hazelcastConnection = new HazelcastConnection(hazelcastIp);
 
-        if (mongoUri == null || mongoUri.isEmpty()) {
+        if (mongoIp == null || mongoIp.isEmpty()) {
             System.err.println("Error: MONGO_URI environment variable is not set.");
             return;
         }

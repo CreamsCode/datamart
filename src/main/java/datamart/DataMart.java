@@ -1,4 +1,4 @@
-package com.example.datamart;
+package datamart;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.map.IMap;
