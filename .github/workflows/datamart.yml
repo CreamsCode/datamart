@@ -75,9 +75,6 @@ jobs:
     needs: deploy-infrastructure
 
     steps:
-      - name: Checkout Repository
-          uses: actions/checkout@v3
-
       - name: Configure AWS CLI
         uses: aws-actions/configure-aws-credentials@v2
         with:
