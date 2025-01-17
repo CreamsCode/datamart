@@ -184,31 +184,30 @@ resource "aws_instance" "datamart_instance" {
     sudo yum update -y
     sudo yum install -y java-17-amazon-corretto git wget
 
-    # Descargar y extraer Maven
+    # Configuración de Maven
     wget https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
     sudo tar -xvzf apache-maven-3.9.9-bin.tar.gz -C /opt
     sudo mv /opt/apache-maven-3.9.9 /opt/maven
-
-    # Configurar variables de entorno para Maven
     echo "export M2_HOME=/opt/maven" | sudo tee /etc/profile.d/maven.sh
     echo "export PATH=\$M2_HOME/bin:\$PATH" | sudo tee -a /etc/profile.d/maven.sh
     source /etc/profile.d/maven.sh
 
-    # Clonar el repositorio del Datamart
+    # Clonar repositorio Datamart
     git clone https://github.com/CreamsCode/datamart /home/ec2-user/datamart
     cd /home/ec2-user/datamart
 
     export HAZELCAST_IP=${aws_instance.hazelcast_instance.public_ip}
-    echo $HAZELCAST_IP
-    # Compilar y ejecutar el Datamart
+    export MONGO_IP="${var.mongodb_ip}"
+
+    echo "Hazelcast IP: $HAZELCAST_IP"
+    echo "Mongo IP: $MONGO_IP"
+
     /opt/maven/bin/mvn clean package
-
-    export MONGO_IP=${var.mongodb_ip}
-
     java -jar target/datamart-1.0-SNAPSHOT.jar
 
     echo "Datamart instance ready."
   EOF
+
 
   tags = {
     Name = "DatamartInstance"
