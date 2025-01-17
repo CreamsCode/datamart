@@ -202,6 +202,9 @@ resource "aws_instance" "datamart_instance" {
     echo $HAZELCAST_IP
     # Compilar y ejecutar el Datamart
     /opt/maven/bin/mvn clean package
+
+    export MONGO_IP=${var.mongodb_ip}
+
     java -jar target/datamart-1.0-SNAPSHOT.jar
 
     echo "Datamart instance ready."
@@ -225,3 +228,5 @@ resource "aws_ssm_parameter" "hazelcast_ip" {
   overwrite = true
   value = aws_instance.hazelcast_instance.public_ip
 }
+
+

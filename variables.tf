@@ -7,3 +7,8 @@ variable "instance_type" {
   description = "Tipo de instancia de AWS (por ejemplo, t2.micro)"
   default     = "t2.micro"
 }
+
+variable "mongodb_ip" {
+  description = "IP of MongoServer"
+  type        = string
+}

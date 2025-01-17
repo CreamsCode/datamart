@@ -6,7 +6,8 @@ import com.example.datamart.MongoDBConnection;
 
 public class TestDataMart {
     public static void main(String[] args) {
-        String mongoUri = "mongodb://3.94.132.94:27017/";
+        String mongoIp = System.getenv("MONGO_IP");
+        String mongoUri = "mongodb://" + mongoIp + ":27017/";
         String dbName = "graph_words_db";
         String hazelcastIp = System.getenv("HAZELCAST_IP");
 

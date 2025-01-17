@@ -4,7 +4,16 @@ on:
     branches:
       - master
   workflow_dispatch:
-
+    inputs:
+      aws_access_key_id:
+        description: 'AWS Access Key ID'
+        required: true
+      aws_secret_access_key:
+        description: 'AWS Secret Access Key'
+        required: true
+      aws_session_token:
+        description: 'AWS Session Token'
+        required: false
 jobs:
   validate-aws-credentials:
     name: Validate AWS Credentials
@@ -14,9 +23,9 @@ jobs:
       - name: Configure AWS CLI
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-access-key-id: ${{ github.event.inputs.aws_access_key_id }}
+          aws-secret-access-key: ${{ github.event.inputs.aws_secret_access_key }}
+          aws-session-token: ${{ github.event.inputs.aws_session_token }}
           aws-region: us-east-1
 
       - name: Verify AWS Identity
@@ -38,9 +47,9 @@ jobs:
       - name: Configure AWS CLI
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-access-key-id: ${{ github.event.inputs.aws_access_key_id }}
+          aws-secret-access-key: ${{ github.event.inputs.aws_secret_access_key }}
+          aws-session-token: ${{ github.event.inputs.aws_session_token }}
           aws-region: us-east-1
 
       - name: Setup Terraform
@@ -51,10 +60,12 @@ jobs:
       - name: Initialize Terraform
         run: terraform init
 
-      - name: Terraform Apply
-        id: apply
-        run: terraform apply -auto-approve
-
+      - name: Deploy Terraform
+        run: |
+          export MONGO_IP=$(aws ssm get-parameter --name "mongodb_ip" --query "Parameter.Value" --output text --region us-east-1)
+          echo "MONGO_IP: $MONGO_IP"
+          terraform apply -auto-approve -var="mongodb_ip=$MONGO_IP"
+      
       - name: Get Hazelcast IP
         id: get-hazelcast-ip
         run: |
@@ -75,9 +86,9 @@ jobs:
       - name: Configure AWS CLI
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-access-key-id: ${{ github.event.inputs.aws_access_key_id }}
+          aws-secret-access-key: ${{ github.event.inputs.aws_secret_access_key }}
+          aws-session-token: ${{ github.event.inputs.aws_session_token }}
           aws-region: us-east-1
       
       - name: Echo Hazelcast IP
@@ -121,9 +132,9 @@ jobs:
       - name: Configure AWS CLI
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-access-key-id: ${{ github.event.inputs.aws_access_key_id }}
+          aws-secret-access-key: ${{ github.event.inputs.aws_secret_access_key }}
+          aws-session-token: ${{ github.event.inputs.aws_session_token }}
           aws-region: us-east-1
 
       - name: Setup Terraform
