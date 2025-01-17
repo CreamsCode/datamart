@@ -57,7 +57,7 @@ resource "aws_security_group" "hazelcast_sg" {
   ingress {
     description = "Hazelcast Port"
     from_port   = 5701
-    to_port     = 5701
+    to_port     = 5710
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -128,10 +128,6 @@ resource "aws_instance" "hazelcast_instance" {
     sudo mv hazelcast-rpm-stable.repo /etc/yum.repos.d/
     sudo yum install hazelcast-5.5.0 -y
 
-    # Iniciar Hazelcast
-    sudo systemctl enable hazelcast
-    sudo systemctl start hazelcast
-
     CONFIG_PATH="/usr/lib/hazelcast/config/hazelcast.xml"
 
     # Asegurarse de que el archivo de configuración existe
@@ -141,33 +137,33 @@ resource "aws_instance" "hazelcast_instance" {
     fi
 
     # Modificar el cluster-name
-    echo "Modificando el cluster-name a 'dev'..."
     sudo sed -i 's|<cluster-name>.*</cluster-name>|<cluster-name>dev</cluster-name>|g' "$CONFIG_PATH"
 
     # Habilitar hazelcast.socket.bind.any
-    echo "Habilitando hazelcast.socket.bind.any..."
     sudo sed -i 's|<property name="hazelcast.socket.bind.any">.*</property>|<property name="hazelcast.socket.bind.any">true</property>|g' "$CONFIG_PATH"
 
     # Configurar la sección <join>
-    echo "Actualizando la configuración de <join>..."
     sudo sed -i 's|<multicast enabled=".*"|<multicast enabled="false"|g' "$CONFIG_PATH"
     sudo sed -i 's|<tcp-ip enabled=".*"|<tcp-ip enabled="true"|g' "$CONFIG_PATH"
 
-    # Actualizar la lista de miembros
-    echo "Actualizando la lista de miembros..."
-    sudo sed -i '/<member-list>/,/<\/member-list>/c\
-                    <member-list>\n\
-                        <member>127.0.0.1</member>\n\
-                    </member-list>' "$CONFIG_PATH"
+    # Configurar la sección <network> para conexiones externas
+    sudo sed -i '/<network>/,/<\/network>/c\
+        <network>\n\
+            <interfaces enabled="false" />\n\
+            <rest-api enabled="true">\n\
+                <endpoint-group name="HEALTH_CHECK" enabled="true" />\n\
+                <endpoint-group name="CLUSTER_READ" enabled="true" />\n\
+            </rest-api>\n\
+        </network>' "$CONFIG_PATH"
 
     # Reiniciar Hazelcast
-    echo "Reiniciando Hazelcast..."
     sudo systemctl restart hazelcast
 
     hz start
 
     echo "Hazelcast server ready."
   EOF
+
 
   tags = {
     Name = "HazelcastInstance"

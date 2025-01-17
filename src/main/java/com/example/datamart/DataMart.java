@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
 public class DataMart {
     private final MongoDBConnection mongoConnection;
     private final HazelcastConnection hazelcastConnection;
-    private final ObjectMapper objectMapper = new ObjectMapper(); // Serializador JSON
+    private final ObjectMapper objectMapper = new ObjectMapper(); 
 
     public DataMart(MongoDBConnection mongoConnection, HazelcastConnection hazelcastConnection) {
         this.mongoConnection = mongoConnection;
