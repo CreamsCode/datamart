@@ -25,57 +25,62 @@ public class DataMart {
 
     public void buildDataMart() {
         System.out.println("Building the DataMart...");
-
+    
         MongoCollection<Document> wordsCollection = mongoConnection.getCollection("words");
         MongoCollection<Document> usageCollection = mongoConnection.getCollection("word_usage");
-
+    
         IMap<String, String> wordsMap = hazelcastConnection.getWordsMap(); 
         IMap<String, String> graphMap = hazelcastConnection.getGraphMap(); 
-
+    
         ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
+    
         for (Document word : wordsCollection.find()) {
             executor.submit(() -> {
                 try {
                     String wordText = word.getString("word");
-                    Object wordId = word.getObjectId("_id");
-
-                    List<Map<String, Object>> usages = loadWordUsages(wordId, usageCollection);
-                    String usagesJson = objectMapper.writeValueAsString(usages);
-
-                    wordsMap.put(wordText, usagesJson);
-                    System.out.println("Added word to words_map: " + wordText + " with usages: " + usagesJson);
+                        if (!wordsMap.containsKey(wordText)) {
+                        Object wordId = word.getObjectId("_id");
+    
+                        List<Map<String, Object>> usages = loadWordUsages(wordId, usageCollection);
+                        String usagesJson = objectMapper.writeValueAsString(usages);
+    
+                        wordsMap.put(wordText, usagesJson); // Insertar palabra al mapa
+                        System.out.println("Added word to words_map: " + wordText + " with usages: " + usagesJson);
+                    } else {
+                        System.out.println("Word already exists in words_map: " + wordText);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             });
         }
-
+    
         executor.shutdown();
         while (!executor.isTerminated()) {}
-
+    
         executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
+    
         Set<String> allWords = wordsMap.keySet();
         for (String word : allWords) {
             executor.submit(() -> {
                 try {
                     List<String> connectedWords = findConnectedWords(word, allWords);
                     String connectedWordsJson = objectMapper.writeValueAsString(connectedWords);
-
-                    graphMap.put(word, connectedWordsJson);
+    
+                    graphMap.put(word, connectedWordsJson); 
                     System.out.println("Processed word '" + word + "' with connected words: " + connectedWordsJson);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             });
         }
-
+    
         executor.shutdown();
         while (!executor.isTerminated()) {}
-
+    
         System.out.println("DataMart built successfully.");
     }
+    
 
     private List<String> findConnectedWords(String word, Set<String> allWords) {
         return allWords.parallelStream()
