@@ -90,35 +90,11 @@ jobs:
           aws-secret-access-key: ${{ github.event.inputs.aws_secret_access_key }}
           aws-session-token: ${{ github.event.inputs.aws_session_token }}
           aws-region: us-east-1
-      
-      - name: Echo Hazelcast IP
-        run: |
-          echo "HAZELCAST_IP=${{ needs.deploy-infrastructure.outputs.hazelcast_ip }}"
-
-      - name: Install Java
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Install Maven 
-        run: |
-          wget https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
-          tar -xvzf apache-maven-3.9.9-bin.tar.gz
-          sudo mv apache-maven-3.9.9 /opt/maven
-          echo "export M2_HOME=/opt/maven" >> $GITHUB_ENV
-          echo "export PATH=/opt/maven/bin:\$PATH" >> $GITHUB_ENV
-          source $GITHUB_ENV
-          mvn -version
-
-      - name: Build Datamart
-        run: |
-          mvn clean package
 
       - name: Run Datamart
         run: |
           echo "Running Datamart with Hazelcast IP: $HAZELCAST_IP"
-          java -jar target/datamart-1.0-SNAPSHOT.jar
+          echo "Running DataMart with MongoDB IP: $MONGO_IP"
         env:
           HAZELCAST_IP: ${{ needs.deploy-infrastructure.outputs.hazelcast_ip }}
           MONGO_IP: ${{ needs.deploy-infrastructure.outputs.mongo_ip }}
