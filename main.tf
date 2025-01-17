@@ -116,6 +116,7 @@ resource "aws_instance" "hazelcast_instance" {
   key_name      = "vockey" # Cambia esto por el nombre correcto de tu par de claves
   subnet_id     = aws_subnet.datamart_subnet.id
   vpc_security_group_ids = [aws_security_group.hazelcast_sg.id]
+  iam_instance_profile   = "EMR_EC2_DefaultRole"
 
   user_data = <<-EOF
     #!/bin/bash
@@ -127,6 +128,8 @@ resource "aws_instance" "hazelcast_instance" {
     sudo mv hazelcast-rpm-stable.repo /etc/yum.repos.d/
     sudo yum install hazelcast-5.5.0 -y
 
+    # Iniciar Hazelcast
+    sudo systemctl enable hazelcast
     sudo systemctl start hazelcast
 
     hz start
@@ -146,6 +149,7 @@ resource "aws_instance" "datamart_instance" {
   key_name      = "vockey" # Cambia esto por el nombre correcto de tu par de claves
   subnet_id     = aws_subnet.datamart_subnet.id
   vpc_security_group_ids = [aws_security_group.datamart_sg.id]
+  iam_instance_profile   = "EMR_EC2_DefaultRole"
 
   user_data = <<-EOF
     #!/bin/bash
@@ -166,6 +170,12 @@ resource "aws_instance" "datamart_instance" {
     git clone https://github.com/CreamsCode/datamart /home/ec2-user/datamart
     cd /home/ec2-user/datamart
 
+    export HAZELCAST_IP=$(aws ec2 describe-instances \
+      --filters "Name=tag:Name,Values=HazelcastInstance" \
+      --query "Reservations[].Instances[].PublicIpAddress" \
+      --output text \
+      --region us-east-1)
+    
     # Compilar y ejecutar el Datamart
     /opt/maven/bin/mvn clean package
     java -jar target/datamart-1.0-SNAPSHOT.jar
