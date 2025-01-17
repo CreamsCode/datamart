@@ -132,6 +132,38 @@ resource "aws_instance" "hazelcast_instance" {
     sudo systemctl enable hazelcast
     sudo systemctl start hazelcast
 
+    CONFIG_PATH="/usr/lib/hazelcast/config/hazelcast.xml"
+
+    # Asegurarse de que el archivo de configuración existe
+    if [ ! -f "$CONFIG_PATH" ]; then
+        echo "El archivo $CONFIG_PATH no existe. Asegúrate de que Hazelcast está instalado correctamente."
+        exit 1
+    fi
+
+    # Modificar el cluster-name
+    echo "Modificando el cluster-name a 'dev'..."
+    sudo sed -i 's|<cluster-name>.*</cluster-name>|<cluster-name>dev</cluster-name>|g' "$CONFIG_PATH"
+
+    # Habilitar hazelcast.socket.bind.any
+    echo "Habilitando hazelcast.socket.bind.any..."
+    sudo sed -i 's|<property name="hazelcast.socket.bind.any">.*</property>|<property name="hazelcast.socket.bind.any">true</property>|g' "$CONFIG_PATH"
+
+    # Configurar la sección <join>
+    echo "Actualizando la configuración de <join>..."
+    sudo sed -i 's|<multicast enabled=".*"|<multicast enabled="false"|g' "$CONFIG_PATH"
+    sudo sed -i 's|<tcp-ip enabled=".*"|<tcp-ip enabled="true"|g' "$CONFIG_PATH"
+
+    # Actualizar la lista de miembros
+    echo "Actualizando la lista de miembros..."
+    sudo sed -i '/<member-list>/,/<\/member-list>/c\
+                    <member-list>\n\
+                        <member>127.0.0.1</member>\n\
+                    </member-list>' "$CONFIG_PATH"
+
+    # Reiniciar Hazelcast
+    echo "Reiniciando Hazelcast..."
+    sudo systemctl restart hazelcast
+
     hz start
 
     echo "Hazelcast server ready."
@@ -170,12 +202,8 @@ resource "aws_instance" "datamart_instance" {
     git clone https://github.com/CreamsCode/datamart /home/ec2-user/datamart
     cd /home/ec2-user/datamart
 
-    export HAZELCAST_IP=$(aws ec2 describe-instances \
-      --filters "Name=tag:Name,Values=HazelcastInstance" \
-      --query "Reservations[].Instances[].PublicIpAddress" \
-      --output text \
-      --region us-east-1)
-    
+    export HAZELCAST_IP=${aws_instance.hazelcast_instance.public_ip}
+    echo $HAZELCAST_IP
     # Compilar y ejecutar el Datamart
     /opt/maven/bin/mvn clean package
     java -jar target/datamart-1.0-SNAPSHOT.jar
