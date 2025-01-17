@@ -98,29 +98,3 @@ jobs:
         env:
           HAZELCAST_IP: ${{ needs.deploy-infrastructure.outputs.hazelcast_ip }}
           MONGO_IP: ${{ needs.deploy-infrastructure.outputs.mongo_ip }}
-
-  cleanup:
-    name: Cleanup Resources
-    runs-on: ubuntu-latest
-    needs: [deploy-infrastructure, setup-datamart]
-    if: always()
-
-    steps:
-      - name: Configure AWS CLI
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ github.event.inputs.aws_access_key_id }}
-          aws-secret-access-key: ${{ github.event.inputs.aws_secret_access_key }}
-          aws-session-token: ${{ github.event.inputs.aws_session_token }}
-          aws-region: us-east-1
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.0
-
-      - name: Initialize Terraform
-        run: terraform init
-
-      - name: Destroy Terraform Resources
-        run: terraform destroy -auto-approve
