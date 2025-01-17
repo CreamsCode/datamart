@@ -69,8 +69,6 @@ jobs:
           echo "hazelcast_ip=$hazelcast_ip" >> $GITHUB_ENV
           echo "datamart_ip=$datamart_ip" >> $GITHUB_ENV
 
-
-
   setup-datamart:
     name: Setup and Run Datamart
     runs-on: ubuntu-latest

@@ -125,7 +125,9 @@ resource "aws_instance" "hazelcast_instance" {
     # Descargar y configurar Hazelcast
     wget https://repository.hazelcast.com/rpm/stable/hazelcast-rpm-stable.repo -O hazelcast-rpm-stable.repo
     sudo mv hazelcast-rpm-stable.repo /etc/yum.repos.d/
-    sudo yum install hazelcast-5.5.0
+    sudo yum install hazelcast-5.5.0 -y
+
+    sudo systemctl start hazelcast
 
     hz start
 
@@ -163,9 +165,6 @@ resource "aws_instance" "datamart_instance" {
     # Clonar el repositorio del Datamart
     git clone https://github.com/CreamsCode/datamart /home/ec2-user/datamart
     cd /home/ec2-user/datamart
-
-    # Crear archivo de configuración con la IP del cliente Hazelcast (puede cambiar dinámicamente)
-    echo "hazelcast.ip=${aws_instance.hazelcast_instance.public_ip}" > config.properties
 
     # Compilar y ejecutar el Datamart
     /opt/maven/bin/mvn clean package
