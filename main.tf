@@ -2,18 +2,21 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# VPC
-resource "aws_vpc" "datamart_vpc" {
-  cidr_block = "10.0.0.0/16"
-  tags = {
-    Name = "DatamartVPC"
-  }
+data "aws_ssm_parameter" "vpc_id" {
+  name = "/shared/vpc/id"
 }
 
-# Subnet Pública
+data "aws_ssm_parameter" "igw_id" {
+  name = "/shared/vpc/igw_id"
+}
+
+data "aws_ssm_parameter" "route_table_id" {
+  name = "/shared/vpc/route_table_id"
+}
+
 resource "aws_subnet" "datamart_subnet" {
-  vpc_id                  = aws_vpc.datamart_vpc.id
-  cidr_block              = "10.0.1.0/24"
+  vpc_id                  = data.aws_ssm_parameter.vpc_id.value
+  cidr_block              = "10.0.3.0/24"
   map_public_ip_on_launch = true
   availability_zone       = "us-east-1a"
   tags = {
@@ -21,35 +24,13 @@ resource "aws_subnet" "datamart_subnet" {
   }
 }
 
-# Internet Gateway
-resource "aws_internet_gateway" "datamart_igw" {
-  vpc_id = aws_vpc.datamart_vpc.id
-  tags = {
-    Name = "DatamartInternetGateway"
-  }
-}
-
-# Route Table para la Subnet Pública
-resource "aws_route_table" "datamart_route_table" {
-  vpc_id = aws_vpc.datamart_vpc.id
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.datamart_igw.id
-  }
-  tags = {
-    Name = "DatamartRouteTable"
-  }
-}
-
-# Asociar la Route Table a la Subnet Pública
 resource "aws_route_table_association" "datamart_subnet_association" {
   subnet_id      = aws_subnet.datamart_subnet.id
-  route_table_id = aws_route_table.datamart_route_table.id
+  route_table_id = data.aws_ssm_parameter.route_table_id.value
 }
 
-# Grupo de Seguridad para Hazelcast
 resource "aws_security_group" "hazelcast_sg" {
-  vpc_id = aws_vpc.datamart_vpc.id
+  vpc_id = data.aws_ssm_parameter.vpc_id.value
   tags = {
     Name = "HazelcastSecurityGroup"
   }
@@ -78,9 +59,8 @@ resource "aws_security_group" "hazelcast_sg" {
   }
 }
 
-# Grupo de Seguridad para el Datamart
 resource "aws_security_group" "datamart_sg" {
-  vpc_id = aws_vpc.datamart_vpc.id
+  vpc_id = data.aws_ssm_parameter.vpc_id.value
   tags = {
     Name = "DatamartSecurityGroup"
   }
@@ -109,11 +89,10 @@ resource "aws_security_group" "datamart_sg" {
   }
 }
 
-# Instancia EC2 para Hazelcast
 resource "aws_instance" "hazelcast_instance" {
-  ami           = "ami-05576a079321f21f8" # Cambia esto si es necesario
+  ami           = "ami-05576a079321f21f8"
   instance_type = "t2.micro"
-  key_name      = "vockey" # Cambia esto por el nombre correcto de tu par de claves
+  key_name      = "vockey"
   subnet_id     = aws_subnet.datamart_subnet.id
   vpc_security_group_ids = [aws_security_group.hazelcast_sg.id]
   iam_instance_profile   = "EMR_EC2_DefaultRole"
@@ -170,11 +149,10 @@ resource "aws_instance" "hazelcast_instance" {
   }
 }
 
-# Instancia EC2 para el Datamart
 resource "aws_instance" "datamart_instance" {
-  ami           = "ami-05576a079321f21f8" # Cambia esto si es necesario
+  ami           = "ami-05576a079321f21f8"
   instance_type = "t2.micro"
-  key_name      = "vockey" # Cambia esto por el nombre correcto de tu par de claves
+  key_name      = "vockey"
   subnet_id     = aws_subnet.datamart_subnet.id
   vpc_security_group_ids = [aws_security_group.datamart_sg.id]
   iam_instance_profile   = "EMR_EC2_DefaultRole"
@@ -227,5 +205,3 @@ resource "aws_ssm_parameter" "hazelcast_ip" {
   overwrite = true
   value = aws_instance.hazelcast_instance.public_ip
 }
-
-
